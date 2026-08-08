@@ -1,0 +1,17 @@
+# Node dependencies
+node_modules/
+
+# TypeScript build output
+dist/
+
+# Input videos
+input/
+
+# Temporary video clips
+temp/
+
+# Generated videos
+output/
+
+# FFmpeg concat list
+clips.txt

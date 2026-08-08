@@ -1,0 +1,24 @@
+{
+  "name": "video-editor-program",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tuannguyen8/VideoEditor.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tuannguyen8/VideoEditor/issues"
+  },
+  "homepage": "https://github.com/tuannguyen8/VideoEditor#readme",
+  "description": "",
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "typescript": "^7.0.2"
+  }
+}
