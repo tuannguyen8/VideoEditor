@@ -1,4 +1,5 @@
 import express from "express";
+import { randomUUID } from "crypto";
 
 import { createHighlight } from "./services/highlightService";
 import { parseSegments } from "./validators/segmentInputValidator";
@@ -43,8 +44,9 @@ app.post(
       const inputVideo =
         req.file.path;
 
-      const outputVideo =
-        "output/highlight_api.mp4";
+      const jobId = randomUUID();
+      const workDir =`temp/${jobId}`;
+      const outputVideo =`output/highlight_${jobId}.mp4`;
 
       console.log(
         `Received video: ${inputVideo}`
@@ -58,11 +60,13 @@ app.post(
       await createHighlight(
         inputVideo,
         segments,
-        outputVideo
+        outputVideo,
+        workDir
       );
 
       res.status(201).json({
         status: "success",
+        jobId,
         message: "Highlight created successfully",
         output: outputVideo
       });

@@ -1,3 +1,5 @@
+import { mkdirSync } from "fs";
+
 import { Segment } from "../types/segment";
 import { timeToSeconds } from "../utils/time";
 import { validateSegments } from "../validators/segmentValidator";
@@ -12,39 +14,50 @@ import {
 export async function createHighlight(
   inputVideo: string,
   segments: Segment[],
-  highlightOutput: string
+  highlightOutput: string,
+  workDir: string = "temp"
 ): Promise<void> {
-  // Step 1: Read video information
+  mkdirSync(workDir, {
+    recursive: true
+  });
+
   console.log("Reading video information...");
 
-  const videoDuration = await getVideoDuration(inputVideo);
+  const videoDuration =
+    await getVideoDuration(inputVideo);
 
   console.log(
     `Video duration: ${videoDuration.toFixed(2)} seconds`
   );
 
-  // Step 2: Validate segments
   console.log("Validating segments...");
 
-  validateSegments(segments, videoDuration);
+  validateSegments(
+    segments,
+    videoDuration
+  );
 
   console.log("All segments are valid!");
 
   const clipPaths: string[] = [];
 
-  // Step 3: Cut every segment
   for (let i = 0; i < segments.length; i++) {
     const segment = segments[i];
 
-    const start = timeToSeconds(segment.start);
-    const end = timeToSeconds(segment.end);
+    const start =
+      timeToSeconds(segment.start);
 
-    const duration = end - start;
+    const end =
+      timeToSeconds(segment.end);
 
-    const clipNumber = String(i + 1).padStart(3, "0");
+    const duration =
+      end - start;
+
+    const clipNumber =
+      String(i + 1).padStart(3, "0");
 
     const outputVideo =
-      `temp/node_clip_${clipNumber}.mp4`;
+      `${workDir}/node_clip_${clipNumber}.mp4`;
 
     console.log(
       `Cutting clip ${clipNumber}: ${segment.start} -> ${segment.end}`
@@ -59,20 +72,23 @@ export async function createHighlight(
 
     clipPaths.push(outputVideo);
 
-    console.log(`Created: ${outputVideo}`);
+    console.log(
+      `Created: ${outputVideo}`
+    );
   }
 
-  // Step 4: Create clips.txt
-  const concatFilePath = "clips.txt";
+  const concatFilePath =
+    `${workDir}/clips.txt`;
 
   createConcatFile(
     clipPaths,
     concatFilePath
   );
 
-  console.log("Created clips.txt");
+  console.log(
+    `Created: ${concatFilePath}`
+  );
 
-  // Step 5: Merge clips
   console.log("Merging clips...");
 
   await mergeVideoClips(
@@ -80,6 +96,11 @@ export async function createHighlight(
     highlightOutput
   );
 
-  console.log("Highlight created successfully!");
-  console.log(`Created: ${highlightOutput}`);
+  console.log(
+    "Highlight created successfully!"
+  );
+
+  console.log(
+    `Created: ${highlightOutput}`
+  );
 }

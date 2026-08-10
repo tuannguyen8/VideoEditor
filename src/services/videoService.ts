@@ -1,6 +1,7 @@
 import { execFile } from "child_process";
 import { promisify } from "util";
 import { writeFileSync } from "fs";
+import path from "path";
 
 const execFileAsync = promisify(execFile);
 
@@ -85,9 +86,21 @@ export function createConcatFile(
   clipPaths: string[],
   concatFilePath: string
 ): void {
+  const concatDirectory =
+    path.dirname(concatFilePath);
+
   const concatContent = clipPaths
-    .map((clipPath) => `file '${clipPath}'`)
+    .map((clipPath) => {
+      const relativePath = path
+        .relative(concatDirectory, clipPath)
+        .replace(/\\/g, "/");
+
+      return `file '${relativePath}'`;
+    })
     .join("\n");
 
-  writeFileSync(concatFilePath, concatContent);
+  writeFileSync(
+    concatFilePath,
+    concatContent
+  );
 }
