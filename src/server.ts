@@ -2,12 +2,12 @@ import express from "express";
 
 import { createHighlight } from "./services/highlightService";
 import { parseSegments } from "./validators/segmentInputValidator";
+import { upload } from "./middleware/upload";
 
 const app = express();
 
 const PORT = 3000;
 
-// Allow Express to read JSON request bodies
 app.use(express.json());
 
 app.get("/health", (req, res) => {
@@ -17,52 +17,74 @@ app.get("/health", (req, res) => {
   });
 });
 
-app.post("/api/highlights", async (req, res) => {
-  try {
-    // Step 1: Read and validate segments from request body
-    const segments = parseSegments(req.body.segments);
+app.post(
+  "/api/highlights",
+  upload.single("video"),
+  async (req, res) => {
+    try {
+      // Step 1: Make sure a video was uploaded
+      if (!req.file) {
+        throw new Error("Video file is required.");
+      }
 
-    // For now, we still use a fixed input video
-    const inputVideo = "input/match.mp4";
+      // Step 2: Make sure segments were provided
+      if (!req.body.segments) {
+        throw new Error("Segments are required.");
+      }
 
-    const outputVideo =
-      "output/highlight_api.mp4";
+      // Step 3: Convert segments string into JavaScript data
+      const rawSegments: unknown =
+        JSON.parse(req.body.segments);
 
-    console.log(
-      `Received request with ${segments.length} segments.`
-    );
+      // Step 4: Validate segment structure
+      const segments =
+        parseSegments(rawSegments);
 
-    // Step 2: Create highlight
-    await createHighlight(
-      inputVideo,
-      segments,
-      outputVideo
-    );
+      const inputVideo =
+        req.file.path;
 
-    // Step 3: Send success response
-    res.status(201).json({
-      status: "success",
-      message: "Highlight created successfully",
-      output: outputVideo
-    });
+      const outputVideo =
+        "output/highlight_api.mp4";
 
-  } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Unknown error";
+      console.log(
+        `Received video: ${inputVideo}`
+      );
 
-    console.error(
-      "Failed to create highlight:",
-      message
-    );
+      console.log(
+        `Received ${segments.length} segments.`
+      );
 
-    res.status(400).json({
-      status: "error",
-      message
-    });
+      // Step 5: Create highlight
+      await createHighlight(
+        inputVideo,
+        segments,
+        outputVideo
+      );
+
+      res.status(201).json({
+        status: "success",
+        message: "Highlight created successfully",
+        output: outputVideo
+      });
+
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unknown error";
+
+      console.error(
+        "Failed to create highlight:",
+        message
+      );
+
+      res.status(400).json({
+        status: "error",
+        message
+      });
+    }
   }
-});
+);
 
 app.listen(PORT, () => {
   console.log(
