@@ -1,9 +1,10 @@
-import express from "express";
-import { randomUUID } from "crypto";
+import express from 'express';
+import { rm } from 'fs/promises';
+import { randomUUID } from 'crypto';
 
-import { createHighlight } from "./services/highlightService";
-import { parseSegments } from "./validators/segmentInputValidator";
-import { upload } from "./middleware/upload";
+import { createHighlight } from './services/highlightService';
+import { parseSegments } from './validators/segmentInputValidator';
+import { upload } from './middleware/upload';
 
 const app = express();
 
@@ -11,87 +12,81 @@ const PORT = 3000;
 
 app.use(express.json());
 
-app.get("/health", (req, res) => {
-  res.json({
-    status: "ok",
-    message: "Video Editor API is running"
-  });
+app.get('/health', (req, res) => {
+	res.json({
+		status: 'ok',
+		message: 'Video Editor API is running',
+	});
 });
 
-app.post(
-  "/api/highlights",
-  upload.single("video"),
-  async (req, res) => {
-    try {
-      // Step 1: Make sure a video was uploaded
-      if (!req.file) {
-        throw new Error("Video file is required.");
-      }
+app.post('/api/highlights', upload.single('video'), async (req, res) => {
+	let inputVideo: string | undefined;
+	let workDir: string | undefined;
 
-      // Step 2: Make sure segments were provided
-      if (!req.body.segments) {
-        throw new Error("Segments are required.");
-      }
+	try {
+		// Step 1: Make sure a video was uploaded
+		if (!req.file) {
+			throw new Error('Video file is required.');
+		}
 
-      // Step 3: Convert segments string into JavaScript data
-      const rawSegments: unknown =
-        JSON.parse(req.body.segments);
+		// Step 2: Make sure segments were provided
+		if (!req.body.segments) {
+			throw new Error('Segments are required.');
+		}
 
-      // Step 4: Validate segment structure
-      const segments =
-        parseSegments(rawSegments);
+		// Step 3: Convert segments string into JavaScript data
+		const rawSegments: unknown = JSON.parse(req.body.segments);
 
-      const inputVideo =
-        req.file.path;
+		// Step 4: Validate segment structure
+		const segments = parseSegments(rawSegments);
 
-      const jobId = randomUUID();
-      const workDir =`temp/${jobId}`;
-      const outputVideo =`output/highlight_${jobId}.mp4`;
+		inputVideo = req.file.path;
+		const jobId = randomUUID();
+		workDir = `temp/${jobId}`;
+		const outputVideo = `output/highlight_${jobId}.mp4`;
 
-      console.log(
-        `Received video: ${inputVideo}`
-      );
+		console.log(`Received video: ${inputVideo}`);
 
-      console.log(
-        `Received ${segments.length} segments.`
-      );
+		console.log(`Received ${segments.length} segments.`);
 
-      // Step 5: Create highlight
-      await createHighlight(
-        inputVideo,
-        segments,
-        outputVideo,
-        workDir
-      );
+		// Step 5: Create highlight
+		await createHighlight(inputVideo, segments, outputVideo, workDir);
 
-      res.status(201).json({
-        status: "success",
-        jobId,
-        message: "Highlight created successfully",
-        output: outputVideo
-      });
+		res.status(201).json({
+			status: 'success',
+			jobId,
+			message: 'Highlight created successfully',
+			output: outputVideo,
+		});
+	} catch (error) {
+		const message = error instanceof Error ? error.message : 'Unknown error';
 
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Unknown error";
+		console.error('Failed to create highlight:', message);
 
-      console.error(
-        "Failed to create highlight:",
-        message
-      );
+		res.status(400).json({
+			status: 'error',
+			message,
+		});
+	} finally {
+		if (inputVideo) {
+			await rm(inputVideo, {
+				force: true,
+			});
 
-      res.status(400).json({
-        status: "error",
-        message
-      });
-    }
-  }
-);
+			console.log(`Deleted uploaded video: ${inputVideo}`);
+		}
+
+		if (workDir) {
+			await rm(workDir, {
+				recursive: true,
+				force: true,
+			});
+
+			console.log(`Deleted temporary workspace: ${workDir}`);
+		}
+	}
+});
 
 app.listen(PORT, () => {
-  console.log(
-    `Server is running on http://localhost:${PORT}`
-  );
+	console.log(`Server is running on http://localhost:${PORT}`);
 });
