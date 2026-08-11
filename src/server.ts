@@ -1,4 +1,10 @@
-import express from 'express';
+//import express from 'express';
+import express, {
+  Request,
+  Response,
+  NextFunction
+} from "express";
+import multer from "multer";
 import { rm } from 'fs/promises';
 import { randomUUID } from 'crypto';
 
@@ -86,6 +92,47 @@ app.post('/api/highlights', upload.single('video'), async (req, res) => {
 		}
 	}
 });
+
+app.use(
+  (
+    error: unknown,
+    req: Request,
+    res: Response,
+    _next: NextFunction
+  ) => {
+    if (error instanceof multer.MulterError) {
+      if (error.code === "LIMIT_FILE_SIZE") {
+        res.status(413).json({
+          status: "error",
+          message: "Video file is too large."
+        });
+
+        return;
+      }
+
+      res.status(400).json({
+        status: "error",
+        message: error.message
+      });
+
+      return;
+    }
+
+    if (error instanceof Error) {
+      res.status(400).json({
+        status: "error",
+        message: error.message
+      });
+
+      return;
+    }
+
+    res.status(500).json({
+      status: "error",
+      message: "Unknown server error."
+    });
+  }
+);
 
 app.listen(PORT, () => {
 	console.log(`Server is running on http://localhost:${PORT}`);
