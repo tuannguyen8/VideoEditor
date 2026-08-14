@@ -1,0 +1,8 @@
+→ Upload video
+→ validate
+→ nhận segments
+→ tạo workspace riêng
+→ FFmpeg cut + merge
+→ cleanup temp/upload
+→ trả videoUrl
+→ browser phát highlight qua HTTP
