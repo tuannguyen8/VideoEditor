@@ -7,6 +7,7 @@ import express, {
 import multer from "multer";
 import { rm } from 'fs/promises';
 import { randomUUID } from 'crypto';
+import path from "path";
 
 import { createHighlight } from './services/highlightService';
 import { parseSegments } from './validators/segmentInputValidator';
@@ -17,6 +18,16 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json());
+
+const outputDirectory = path.join(
+  __dirname,
+  "../output"
+);
+
+app.use(
+  "/highlights",
+  express.static(outputDirectory)
+);
 
 app.get('/health', (req, res) => {
 	res.json({
@@ -49,7 +60,11 @@ app.post('/api/highlights', upload.single('video'), async (req, res) => {
 		inputVideo = req.file.path;
 		const jobId = randomUUID();
 		workDir = `temp/${jobId}`;
-		const outputVideo = `output/highlight_${jobId}.mp4`;
+
+		// const outputVideo = `output/highlight_${jobId}.mp4`;
+        const outputFileName = `highlight_${jobId}.mp4`;
+        const outputVideo = `output/${outputFileName}`;
+        const videoUrl = `/highlights/${outputFileName}`;
 
 		console.log(`Received video: ${inputVideo}`);
 
@@ -62,7 +77,7 @@ app.post('/api/highlights', upload.single('video'), async (req, res) => {
 			status: 'success',
 			jobId,
 			message: 'Highlight created successfully',
-			output: outputVideo,
+			videoUrl,
 		});
 	} catch (error) {
 		const message = error instanceof Error ? error.message : 'Unknown error';
