@@ -15,6 +15,9 @@ function App() {
 		},
 	]);
 
+  const [videoUrl, setVideoUrl] =
+  useState<string | null>(null);
+
 	function handleVideoChange(event: React.ChangeEvent<HTMLInputElement>) {
 		const file = event.target.files?.[0] ?? null;
 
@@ -54,7 +57,7 @@ function App() {
 		setSegments(updatedSegments);
 	}
 
-  function handleCreateHighlight() {
+  async function handleCreateHighlight() {
     if (!videoFile) {
       console.log("No video selected");
       return;
@@ -72,9 +75,29 @@ function App() {
       JSON.stringify(segments)
     );
 
-    formData.forEach((value, key) => {
-      console.log(key, value);
-    });
+  try {
+    const response = await fetch(
+      "/api/highlights",
+      {
+        method: "POST",
+        body: formData
+      }
+    );
+
+    const data = await response.json();
+
+    console.log("Response:", data);
+
+    if (data.status === "success") {
+      setVideoUrl(data.videoUrl);
+    }
+
+  } catch (error) {
+    console.error(
+      "Failed to create highlight:",
+      error
+    );
+  }
   }
 
 	return (
@@ -139,6 +162,19 @@ function App() {
 				>
 					Create Highlight
 				</button>
+
+        {videoUrl && (
+          <div>
+            <h3>Your Highlight</h3>
+
+            <video
+              src={videoUrl}
+              controls
+              width="720"
+            />
+          </div>
+        )}
+        
 			</section>
 		</main>
 	);
