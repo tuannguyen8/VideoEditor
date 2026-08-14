@@ -54,6 +54,29 @@ function App() {
 		setSegments(updatedSegments);
 	}
 
+  function handleCreateHighlight() {
+    if (!videoFile) {
+      console.log("No video selected");
+      return;
+    }
+
+    const formData = new FormData();
+
+    formData.append(
+      "video",
+      videoFile
+    );
+
+    formData.append(
+      "segments",
+      JSON.stringify(segments)
+    );
+
+    formData.forEach((value, key) => {
+      console.log(key, value);
+    });
+  }
+
 	return (
 		<main>
 			<h1>Football Highlight Editor</h1>
@@ -112,9 +135,7 @@ function App() {
 
 				<button
 					type="button"
-					onClick={() => {
-						console.log('Create Highlight clicked');
-					}}
+					onClick={handleCreateHighlight}
 				>
 					Create Highlight
 				</button>
