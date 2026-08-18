@@ -6,6 +6,10 @@ interface Segment {
 }
 
 function App() {
+	const [isProcessing, setIsProcessing] = useState(false);
+
+	const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
 	const [videoFile, setVideoFile] = useState<File | null>(null);
 
 	const [segments, setSegments] = useState<Segment[]>([
@@ -15,8 +19,7 @@ function App() {
 		},
 	]);
 
-  const [videoUrl, setVideoUrl] =
-  useState<string | null>(null);
+	const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
 	function handleVideoChange(event: React.ChangeEvent<HTMLInputElement>) {
 		const file = event.target.files?.[0] ?? null;
@@ -57,48 +60,88 @@ function App() {
 		setSegments(updatedSegments);
 	}
 
-  async function handleCreateHighlight() {
-    if (!videoFile) {
-      console.log("No video selected");
-      return;
-    }
+	// async function handleCreateHighlight() {
+	//   if (!videoFile) {
+	//     console.log("No video selected");
+	//     return;
+	//   }
 
-    const formData = new FormData();
+	//   const formData = new FormData();
 
-    formData.append(
-      "video",
-      videoFile
-    );
+	//   formData.append(
+	//     "video",
+	//     videoFile
+	//   );
 
-    formData.append(
-      "segments",
-      JSON.stringify(segments)
-    );
+	//   formData.append(
+	//     "segments",
+	//     JSON.stringify(segments)
+	//   );
 
-  try {
-    const response = await fetch(
-      "/api/highlights",
-      {
-        method: "POST",
-        body: formData
-      }
-    );
+	// try {
+	//   const response = await fetch(
+	//     "/api/highlights",
+	//     {
+	//       method: "POST",
+	//       body: formData
+	//     }
+	//   );
 
-    const data = await response.json();
+	//   const data = await response.json();
 
-    console.log("Response:", data);
+	//   console.log("Response:", data);
 
-    if (data.status === "success") {
-      setVideoUrl(data.videoUrl);
-    }
+	//   if (data.status === "success") {
+	//     setVideoUrl(data.videoUrl);
+	//   }
 
-  } catch (error) {
-    console.error(
-      "Failed to create highlight:",
-      error
-    );
-  }
-  }
+	// } catch (error) {
+	//   console.error(
+	//     "Failed to create highlight:",
+	//     error
+	//   );
+	// }
+	// }
+
+	async function handleCreateHighlight() {
+		if (!videoFile) {
+			setErrorMessage('Please select a video first.');
+			return;
+		}
+
+		const formData = new FormData();
+
+		formData.append('video', videoFile);
+
+		formData.append('segments', JSON.stringify(segments));
+
+		try {
+			setIsProcessing(true);
+
+			setErrorMessage(null);
+
+			setVideoUrl(null);
+
+			const response = await fetch('/api/highlights', {
+				method: 'POST',
+				body: formData,
+			});
+
+			const data = await response.json();
+
+			if (!response.ok) {
+				throw new Error(data.message || 'Failed to create highlight.');
+			}
+
+			setVideoUrl(data.videoUrl);
+		} catch (error) {
+			const message = error instanceof Error ? error.message : 'Unknown error';
+
+			setErrorMessage(message);
+		} finally {
+			setIsProcessing(false);
+		}
+	}
 
 	return (
 		<main>
@@ -153,15 +196,24 @@ function App() {
 				</button>
 			</section>
 
-			<section>
-				<h2>3. Create Highlight</h2>
+      <section>
+        <h2>3. Create Highlight</h2>
 
-				<button
-					type="button"
-					onClick={handleCreateHighlight}
-				>
-					Create Highlight
-				</button>
+        <button
+          type="button"
+          onClick={handleCreateHighlight}
+          disabled={isProcessing}
+        >
+          {isProcessing
+            ? "Creating Highlight..."
+            : "Create Highlight"}
+        </button>
+
+        {errorMessage && (
+          <p>
+            Error: {errorMessage}
+          </p>
+        )}
 
         {videoUrl && (
           <div>
@@ -174,8 +226,7 @@ function App() {
             />
           </div>
         )}
-        
-			</section>
+      </section>
 		</main>
 	);
 }

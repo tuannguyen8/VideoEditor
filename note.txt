@@ -6,3 +6,31 @@
 → cleanup temp/upload
 → trả videoUrl
 → browser phát highlight qua HTTP
+
+end-to-end flow:
+
+React
+  ↓
+User chọn video
+  ↓
+User nhập nhiều segments
+  ↓
+Create Highlight
+  ↓
+FormData
+  ↓
+POST /api/highlights
+  ↓
+Express + Multer
+  ↓
+Validation
+  ↓
+FFmpeg cut + merge
+  ↓
+Cleanup temporary files
+  ↓
+videoUrl
+  ↓
+React
+  ↓
+Preview highlight
