@@ -109,6 +109,13 @@ function App() {
 			return;
 		}
 
+    const validationError = validateSegments(segments);
+
+    if (validationError) {
+      setErrorMessage(validationError);
+      return;
+    }
+
 		const formData = new FormData();
 
 		formData.append('video', videoFile);
@@ -229,6 +236,61 @@ function App() {
       </section>
 		</main>
 	);
+}
+
+function timeToSeconds(time: string): number | null {
+  const parts = time.split(":");
+
+  if (parts.length !== 2) {
+    return null;
+  }
+
+  const minutes = Number(parts[0]);
+  const seconds = Number(parts[1]);
+
+  if (
+    !Number.isInteger(minutes) ||
+    !Number.isInteger(seconds) ||
+    minutes < 0 ||
+    seconds < 0 ||
+    seconds > 59
+  ) {
+    return null;
+  }
+
+  return minutes * 60 + seconds;
+}
+
+function validateSegments(
+  segments: Segment[]
+): string | null {
+  if (segments.length === 0) {
+    return "At least one segment is required.";
+  }
+
+  for (let i = 0; i < segments.length; i++) {
+    const segment = segments[i];
+
+    const start =
+      timeToSeconds(segment.start);
+
+    const end =
+      timeToSeconds(segment.end);
+
+    if (start === null || end === null) {
+      return (
+        `Segment ${i + 1}: use the M:SS format.`
+      );
+    }
+
+    if (start >= end) {
+      return (
+        `Segment ${i + 1}: start time must be before end time.`
+      );
+    }
+  }
+
+  return null;
 }
 
 export default App;
