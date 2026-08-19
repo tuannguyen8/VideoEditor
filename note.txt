@@ -34,3 +34,22 @@ videoUrl
 React
   ↓
 Preview highlight
+
+Về chức năng, app hiện đã có gần đủ MVP flow:
+
+Upload video
+→ đọc duration
+→ add/delete segments
+→ frontend validation
+→ gửi backend
+→ FFmpeg tạo highlight
+→ loading/error
+→ preview kết quả
+
+1. Layout tổng thể
+2. Upload section
+3. Segment rows
+4. Buttons
+5. Error + loading
+6. Highlight preview
+7. Responsive mobile

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-
+import './App.css';
 interface Segment {
 	start: string;
 	end: string;
@@ -12,7 +12,7 @@ function App() {
 
 	const [videoFile, setVideoFile] = useState<File | null>(null);
 
-  const [videoDuration, setVideoDuration] = useState<number | null>(null);
+	const [videoDuration, setVideoDuration] = useState<number | null>(null);
 
 	const [segments, setSegments] = useState<Segment[]>([
 		{
@@ -23,40 +23,30 @@ function App() {
 
 	const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
-	// function handleVideoChange(event: React.ChangeEvent<HTMLInputElement>) {
-	// 	const file = event.target.files?.[0] ?? null;
+	function handleVideoChange(event: React.ChangeEvent<HTMLInputElement>) {
+		const file = event.target.files?.[0] ?? null;
 
-	// 	setVideoFile(file);
-	// }
-  function handleVideoChange(
-    event: React.ChangeEvent<HTMLInputElement>
-  ) {
-    const file =
-      event.target.files?.[0] ?? null;
+		setVideoFile(file);
+		setVideoDuration(null);
 
-    setVideoFile(file);
-    setVideoDuration(null);
+		if (!file) {
+			return;
+		}
 
-    if (!file) {
-      return;
-    }
+		const objectUrl = URL.createObjectURL(file);
 
-    const objectUrl =
-      URL.createObjectURL(file);
+		const video = document.createElement('video');
 
-    const video =
-      document.createElement("video");
+		video.preload = 'metadata';
 
-    video.preload = "metadata";
+		video.onloadedmetadata = () => {
+			setVideoDuration(video.duration);
 
-    video.onloadedmetadata = () => {
-      setVideoDuration(video.duration);
+			URL.revokeObjectURL(objectUrl);
+		};
 
-      URL.revokeObjectURL(objectUrl);
-    };
-
-    video.src = objectUrl;
-  }
+		video.src = objectUrl;
+	}
 
 	function handleSegmentChange(
 		index: number,
@@ -91,65 +81,19 @@ function App() {
 		setSegments(updatedSegments);
 	}
 
-	// async function handleCreateHighlight() {
-	//   if (!videoFile) {
-	//     console.log("No video selected");
-	//     return;
-	//   }
-
-	//   const formData = new FormData();
-
-	//   formData.append(
-	//     "video",
-	//     videoFile
-	//   );
-
-	//   formData.append(
-	//     "segments",
-	//     JSON.stringify(segments)
-	//   );
-
-	// try {
-	//   const response = await fetch(
-	//     "/api/highlights",
-	//     {
-	//       method: "POST",
-	//       body: formData
-	//     }
-	//   );
-
-	//   const data = await response.json();
-
-	//   console.log("Response:", data);
-
-	//   if (data.status === "success") {
-	//     setVideoUrl(data.videoUrl);
-	//   }
-
-	// } catch (error) {
-	//   console.error(
-	//     "Failed to create highlight:",
-	//     error
-	//   );
-	// }
-	// }
-
 	async function handleCreateHighlight() {
 		if (!videoFile) {
 			setErrorMessage('Please select a video first.');
 			return;
 		}
 
-    // const validationError = validateSegments(segments);
-    const validationError = validateSegments(
-      segments,
-      videoDuration
-    );
+		// const validationError = validateSegments(segments);
+		const validationError = validateSegments(segments, videoDuration);
 
-    if (validationError) {
-      setErrorMessage(validationError);
-      return;
-    }
+		if (validationError) {
+			setErrorMessage(validationError);
+			return;
+		}
 
 		const formData = new FormData();
 
@@ -194,53 +138,73 @@ function App() {
 				your highlight.
 			</p>
 
-			<section>
-				<h2>1. Upload Video</h2>
+      <section>
+        <h2>1. Upload Video</h2>
 
-				<input type="file" accept="video/*" onChange={handleVideoChange} />
+        <input
+          className="file-input"
+          type="file"
+          accept="video/*"
+          onChange={handleVideoChange}
+        />
 
-				{videoFile && <p>Selected video: {videoFile.name}</p>}
-        {videoDuration !== null && (
-          <p>
-            Video duration: {videoDuration.toFixed(2)} seconds
-          </p>
+        {videoFile && (
+          <div className="video-info">
+            <p>
+              <strong>Selected video:</strong> {videoFile.name}
+            </p>
+
+            {videoDuration !== null && (
+              <p>
+                <strong>Duration:</strong>{" "}
+                {videoDuration.toFixed(2)} seconds
+              </p>
+            )}
+          </div>
         )}
-
-			</section>
+      </section>
 
 			<section>
 				<h2>2. Highlight Segments</h2>
 
-				{segments.map((segment, index) => (
-					<div key={index}>
-						<span>Segment {index + 1}</span>
+				<div className="segments-list">
+					{segments.map((segment, index) => (
+						<div className="segment-row" key={index}>
+							<span className="segment-label">Segment {index + 1}</span>
 
-						<input
-							type="text"
-							placeholder="Start (M:SS)"
-							value={segment.start}
-							onChange={(event) =>
-								handleSegmentChange(index, 'start', event.target.value)
-							}
-						/>
+							<input
+								className="segment-input"
+								type="text"
+								placeholder="Start (M:SS)"
+								value={segment.start}
+								onChange={(event) =>
+									handleSegmentChange(index, 'start', event.target.value)
+								}
+							/>
 
-						<input
-							type="text"
-							placeholder="End (M:SS)"
-							value={segment.end}
-							onChange={(event) =>
-								handleSegmentChange(index, 'end', event.target.value)
-							}
-						/>
+							<input
+								className="segment-input"
+								type="text"
+								placeholder="End (M:SS)"
+								value={segment.end}
+								onChange={(event) =>
+									handleSegmentChange(index, 'end', event.target.value)
+								}
+							/>
 
-						<button type="button" onClick={() => deleteSegment(index)}>
-							Delete
-						</button>
-					</div>
-				))}
+							<button
+								className="delete-button"
+								type="button"
+								onClick={() => deleteSegment(index)}
+							>
+								Delete
+							</button>
+						</div>
+					))}
+				</div>
 
-				<button type="button" onClick={addSegment}>
-					Add Segment
+				<button className="add-button" type="button" onClick={addSegment}>
+					+ Add Segment
 				</button>
 			</section>
 
@@ -248,6 +212,7 @@ function App() {
         <h2>3. Create Highlight</h2>
 
         <button
+          className="create-button"
           type="button"
           onClick={handleCreateHighlight}
           disabled={isProcessing}
@@ -258,89 +223,89 @@ function App() {
         </button>
 
         {errorMessage && (
-          <p>
+          <p className="error-message">
             Error: {errorMessage}
           </p>
         )}
 
         {videoUrl && (
-          <div>
+          <div className="highlight-result">
             <h3>Your Highlight</h3>
 
             <video
+              className="highlight-video"
               src={videoUrl}
               controls
-              width="720"
             />
           </div>
         )}
       </section>
+
+
 		</main>
 	);
 }
 
 function timeToSeconds(time: string): number | null {
-  const parts = time.split(":");
+	const parts = time.split(':');
 
-  if (parts.length !== 2) {
-    return null;
-  }
+	if (parts.length !== 2) {
+		return null;
+	}
 
-  const minutes = Number(parts[0]);
-  const seconds = Number(parts[1]);
+	const minutes = Number(parts[0]);
+	const seconds = Number(parts[1]);
 
-  if (
-    !Number.isInteger(minutes) ||
-    !Number.isInteger(seconds) ||
-    minutes < 0 ||
-    seconds < 0 ||
-    seconds > 59
-  ) {
-    return null;
-  }
+	if (
+		!Number.isInteger(minutes) ||
+		!Number.isInteger(seconds) ||
+		minutes < 0 ||
+		seconds < 0 ||
+		seconds > 59
+	) {
+		return null;
+	}
 
-  return minutes * 60 + seconds;
+	return minutes * 60 + seconds;
 }
 
 function validateSegments(
-  segments: Segment[],
-  videoDuration: number | null
+	segments: Segment[],
+	videoDuration: number | null,
 ): string | null {
-  if (segments.length === 0) {
-    return "At least one segment is required.";
-  }
+	if (segments.length === 0) {
+		return 'At least one segment is required.';
+	}
 
-  if (videoDuration === null) {
-    return "Could not determine video duration.";
-  }
+	if (videoDuration === null) {
+		return 'Could not determine video duration.';
+	}
 
-  for (let i = 0; i < segments.length; i++) {
-    const segment = segments[i];
+	for (let i = 0; i < segments.length; i++) {
+		const segment = segments[i];
 
-    const start =
-      timeToSeconds(segment.start);
+		const start = timeToSeconds(segment.start);
 
-    const end =
-      timeToSeconds(segment.end);
+		const end = timeToSeconds(segment.end);
 
-    if (start === null || end === null) {
-      return `Segment ${i + 1}: use the M:SS format.`;
-    }
+		if (start === null || end === null) {
+			return `Segment ${i + 1}: use the M:SS format.`;
+		}
 
-    if (start >= end) {
-      return `Segment ${i + 1}: start time must be before end time.`;
-    }
+		if (start >= end) {
+			return `Segment ${i + 1}: start time must be before end time.`;
+		}
 
-    if (start >= videoDuration) {
-      return `Segment ${i + 1}: start time is outside the video.`;
-    }
+		if (start >= videoDuration) {
+			return `Segment ${i + 1}: start time is outside the video.`;
+		}
 
-    if (end > videoDuration) {
-      return `Segment ${i + 1}: end time exceeds the video duration.`;
-    }
-  }
+		if (end > videoDuration) {
+			return `Segment ${i + 1}: end time exceeds the video duration.`;
+		}
+	}
 
-  return null;
+	return null;
 }
 
 export default App;
