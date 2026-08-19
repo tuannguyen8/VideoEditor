@@ -12,6 +12,8 @@ function App() {
 
 	const [videoFile, setVideoFile] = useState<File | null>(null);
 
+  const [videoDuration, setVideoDuration] = useState<number | null>(null);
+
 	const [segments, setSegments] = useState<Segment[]>([
 		{
 			start: '',
@@ -21,11 +23,40 @@ function App() {
 
 	const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
-	function handleVideoChange(event: React.ChangeEvent<HTMLInputElement>) {
-		const file = event.target.files?.[0] ?? null;
+	// function handleVideoChange(event: React.ChangeEvent<HTMLInputElement>) {
+	// 	const file = event.target.files?.[0] ?? null;
 
-		setVideoFile(file);
-	}
+	// 	setVideoFile(file);
+	// }
+  function handleVideoChange(
+    event: React.ChangeEvent<HTMLInputElement>
+  ) {
+    const file =
+      event.target.files?.[0] ?? null;
+
+    setVideoFile(file);
+    setVideoDuration(null);
+
+    if (!file) {
+      return;
+    }
+
+    const objectUrl =
+      URL.createObjectURL(file);
+
+    const video =
+      document.createElement("video");
+
+    video.preload = "metadata";
+
+    video.onloadedmetadata = () => {
+      setVideoDuration(video.duration);
+
+      URL.revokeObjectURL(objectUrl);
+    };
+
+    video.src = objectUrl;
+  }
 
 	function handleSegmentChange(
 		index: number,
@@ -109,7 +140,11 @@ function App() {
 			return;
 		}
 
-    const validationError = validateSegments(segments);
+    // const validationError = validateSegments(segments);
+    const validationError = validateSegments(
+      segments,
+      videoDuration
+    );
 
     if (validationError) {
       setErrorMessage(validationError);
@@ -165,6 +200,12 @@ function App() {
 				<input type="file" accept="video/*" onChange={handleVideoChange} />
 
 				{videoFile && <p>Selected video: {videoFile.name}</p>}
+        {videoDuration !== null && (
+          <p>
+            Video duration: {videoDuration.toFixed(2)} seconds
+          </p>
+        )}
+
 			</section>
 
 			<section>
@@ -262,10 +303,15 @@ function timeToSeconds(time: string): number | null {
 }
 
 function validateSegments(
-  segments: Segment[]
+  segments: Segment[],
+  videoDuration: number | null
 ): string | null {
   if (segments.length === 0) {
     return "At least one segment is required.";
+  }
+
+  if (videoDuration === null) {
+    return "Could not determine video duration.";
   }
 
   for (let i = 0; i < segments.length; i++) {
@@ -278,15 +324,19 @@ function validateSegments(
       timeToSeconds(segment.end);
 
     if (start === null || end === null) {
-      return (
-        `Segment ${i + 1}: use the M:SS format.`
-      );
+      return `Segment ${i + 1}: use the M:SS format.`;
     }
 
     if (start >= end) {
-      return (
-        `Segment ${i + 1}: start time must be before end time.`
-      );
+      return `Segment ${i + 1}: start time must be before end time.`;
+    }
+
+    if (start >= videoDuration) {
+      return `Segment ${i + 1}: start time is outside the video.`;
+    }
+
+    if (end > videoDuration) {
+      return `Segment ${i + 1}: end time exceeds the video duration.`;
     }
   }
 
