@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import './App.css';
 interface Segment {
 	start: string;
@@ -6,6 +6,8 @@ interface Segment {
 }
 
 function App() {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
 	const [isProcessing, setIsProcessing] = useState(false);
 
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -81,6 +83,26 @@ function App() {
 		setSegments(updatedSegments);
 	}
 
+  function handleNewHighlight() {
+    setVideoFile(null);
+    setVideoDuration(null);
+
+    setSegments([
+      {
+        start: '',
+        end: '',
+      },
+    ]);
+
+    setVideoUrl(null);
+    setErrorMessage(null);
+    setIsProcessing(false);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }
+
 	async function handleCreateHighlight() {
 		if (!videoFile) {
 			setErrorMessage('Please select a video first.');
@@ -142,6 +164,7 @@ function App() {
         <h2>1. Upload Video</h2>
 
         <input
+          ref={fileInputRef}
           className="file-input"
           type="file"
           accept="video/*"
@@ -237,6 +260,23 @@ function App() {
               src={videoUrl}
               controls
             />
+    
+            <a
+              className="download-button"
+              href={videoUrl}
+              download
+            >
+              Download Highlight
+            </a>
+
+            <button
+              className="new-highlight-button"
+              type="button"
+              onClick={handleNewHighlight}
+            >
+              New Highlight
+            </button>
+
           </div>
         )}
       </section>

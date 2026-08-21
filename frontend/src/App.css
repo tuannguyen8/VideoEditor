@@ -192,3 +192,44 @@ section h2 {
 
   border-radius: 8px;
 }
+
+.result-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.download-button,
+.new-highlight-button {
+  display: inline-block;
+  padding: 10px 16px;
+
+  border-radius: 8px;
+
+  font-weight: 600;
+  text-decoration: none;
+
+  cursor: pointer;
+}
+
+.download-button {
+  border: none;
+
+  background-color: #2563eb;
+  color: white;
+}
+
+.download-button:hover {
+  background-color: #1d4ed8;
+}
+
+.new-highlight-button {
+  border: 1px solid #d1d5db;
+
+  background-color: white;
+  color: #374151;
+}
+
+.new-highlight-button:hover {
+  background-color: #f3f4f6;
+}
