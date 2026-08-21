@@ -149,6 +149,56 @@ app.use(
   }
 );
 
+app.delete(
+  "/api/highlights/:jobId",
+  async (req, res) => {
+    const { jobId } = req.params;
+
+    const uuidPattern =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+    if (!uuidPattern.test(jobId)) {
+      res.status(400).json({
+        status: "error",
+        message: "Invalid highlight ID."
+      });
+
+      return;
+    }
+
+    const outputVideo = path.join(
+      outputDirectory,
+      `highlight_${jobId}.mp4`
+    );
+
+    try {
+      await rm(outputVideo, {
+        force: true
+      });
+
+      console.log(
+        `Deleted highlight: ${outputVideo}`
+      );
+
+      res.json({
+        status: "success",
+        message: "Highlight deleted successfully."
+      });
+
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unknown error";
+
+      res.status(500).json({
+        status: "error",
+        message
+      });
+    }
+  }
+);
+
 app.listen(PORT, () => {
 	console.log(`Server is running on http://localhost:${PORT}`);
 });

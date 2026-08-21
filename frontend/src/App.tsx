@@ -6,6 +6,9 @@ interface Segment {
 }
 
 function App() {
+
+  const [jobId, setJobId] = useState<string | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
 	const [isProcessing, setIsProcessing] = useState(false);
@@ -83,25 +86,51 @@ function App() {
 		setSegments(updatedSegments);
 	}
 
-  function handleNewHighlight() {
-    setVideoFile(null);
-    setVideoDuration(null);
+async function handleNewHighlight() {
+  if (jobId) {
+    try {
+      const response = await fetch(
+        `/api/highlights/${jobId}`,
+        {
+          method: "DELETE"
+        }
+      );
 
-    setSegments([
-      {
-        start: '',
-        end: '',
-      },
-    ]);
+      if (!response.ok) {
+        const data = await response.json();
 
-    setVideoUrl(null);
-    setErrorMessage(null);
-    setIsProcessing(false);
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+        console.error(
+          "Failed to delete old highlight:",
+          data.message
+        );
+      }
+    } catch (error) {
+      console.error(
+        "Failed to delete old highlight:",
+        error
+      );
     }
   }
+
+  setVideoFile(null);
+  setVideoDuration(null);
+
+  setSegments([
+    {
+      start: '',
+      end: '',
+    },
+  ]);
+
+  setVideoUrl(null);
+  setJobId(null);
+  setErrorMessage(null);
+  setIsProcessing(false);
+
+  if (fileInputRef.current) {
+    fileInputRef.current.value = '';
+  }
+}
 
 	async function handleCreateHighlight() {
 		if (!videoFile) {
@@ -142,6 +171,8 @@ function App() {
 			}
 
 			setVideoUrl(data.videoUrl);
+      setJobId(data.jobId);
+
 		} catch (error) {
 			const message = error instanceof Error ? error.message : 'Unknown error';
 
