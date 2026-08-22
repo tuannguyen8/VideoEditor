@@ -31,6 +31,11 @@ const outputDirectory = path.join(
   "../output"
 );
 
+const frontendDirectory = path.join(
+  __dirname,
+  "../frontend/dist"
+);
+
 cleanupExpiredHighlights(
   outputDirectory,
   HIGHLIGHT_TTL_MS
@@ -137,47 +142,6 @@ app.post('/api/highlights', upload.single('video'), async (req, res) => {
 	}
 });
 
-app.use(
-  (
-    error: unknown,
-    req: Request,
-    res: Response,
-    _next: NextFunction
-  ) => {
-    if (error instanceof multer.MulterError) {
-      if (error.code === "LIMIT_FILE_SIZE") {
-        res.status(413).json({
-          status: "error",
-          message: "Video file is too large."
-        });
-
-        return;
-      }
-
-      res.status(400).json({
-        status: "error",
-        message: error.message
-      });
-
-      return;
-    }
-
-    if (error instanceof Error) {
-      res.status(400).json({
-        status: "error",
-        message: error.message
-      });
-
-      return;
-    }
-
-    res.status(500).json({
-      status: "error",
-      message: "Unknown server error."
-    });
-  }
-);
-
 app.delete(
   "/api/highlights/:jobId",
   async (req, res) => {
@@ -227,6 +191,53 @@ app.delete(
     }
   }
 );
+
+app.use(
+  express.static(frontendDirectory)
+);
+
+app.use(
+  (
+    error: unknown,
+    req: Request,
+    res: Response,
+    _next: NextFunction
+  ) => {
+    if (error instanceof multer.MulterError) {
+      if (error.code === "LIMIT_FILE_SIZE") {
+        res.status(413).json({
+          status: "error",
+          message: "Video file is too large."
+        });
+
+        return;
+      }
+
+      res.status(400).json({
+        status: "error",
+        message: error.message
+      });
+
+      return;
+    }
+
+    if (error instanceof Error) {
+      res.status(400).json({
+        status: "error",
+        message: error.message
+      });
+
+      return;
+    }
+
+    res.status(500).json({
+      status: "error",
+      message: "Unknown server error."
+    });
+  }
+);
+
+
 
 app.listen(PORT, () => {
 	console.log(`Server is running on http://localhost:${PORT}`);
