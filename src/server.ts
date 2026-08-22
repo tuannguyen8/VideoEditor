@@ -12,10 +12,17 @@ import path from "path";
 import { createHighlight } from './services/highlightService';
 import { parseSegments } from './validators/segmentInputValidator';
 import { upload } from './middleware/upload';
+import { cleanupExpiredHighlights } from "./services/cleanupService";
 
 const app = express();
 
 const PORT = 3000;
+
+const HIGHLIGHT_TTL_MS =
+  60 * 60 * 1000;
+
+const CLEANUP_INTERVAL_MS =
+  10 * 60 * 1000;
 
 app.use(express.json());
 
@@ -23,6 +30,28 @@ const outputDirectory = path.join(
   __dirname,
   "../output"
 );
+
+cleanupExpiredHighlights(
+  outputDirectory,
+  HIGHLIGHT_TTL_MS
+).catch((error) => {
+  console.error(
+    "Initial highlight cleanup failed:",
+    error
+  );
+});
+
+setInterval(() => {
+  cleanupExpiredHighlights(
+    outputDirectory,
+    HIGHLIGHT_TTL_MS
+  ).catch((error) => {
+    console.error(
+      "Scheduled highlight cleanup failed:",
+      error
+    );
+  });
+}, CLEANUP_INTERVAL_MS);
 
 app.use(
   "/highlights",
