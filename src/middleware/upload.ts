@@ -1,5 +1,6 @@
 import multer from "multer";
 import path from "path";
+import { config } from "../config/env";
 
 const allowedExtensions = [
   ".mp4",
@@ -52,6 +53,6 @@ export const upload = multer({
   fileFilter,
 
   limits: {
-    fileSize: 2 * 1024 * 1024 * 1024
+    fileSize: config.maxUploadBytes
   }
 });

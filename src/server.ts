@@ -8,6 +8,7 @@ import multer from "multer";
 import { rm } from 'fs/promises';
 import { randomUUID } from 'crypto';
 import path from "path";
+import { config } from "./config/env";
 
 import { createHighlight } from './services/highlightService';
 import { parseSegments } from './validators/segmentInputValidator';
@@ -16,13 +17,11 @@ import { cleanupExpiredHighlights } from "./services/cleanupService";
 
 const app = express();
 
-const PORT = 3000;
+const PORT = config.port;
 
-const HIGHLIGHT_TTL_MS =
-  60 * 60 * 1000;
+const HIGHLIGHT_TTL_MS = config.highlightTtlMs;
 
-const CLEANUP_INTERVAL_MS =
-  10 * 60 * 1000;
+const CLEANUP_INTERVAL_MS = config.cleanupIntervalMs;
 
 app.use(express.json());
 
@@ -242,3 +241,5 @@ app.use(
 app.listen(PORT, () => {
 	console.log(`Server is running on http://localhost:${PORT}`);
 });
+
+
