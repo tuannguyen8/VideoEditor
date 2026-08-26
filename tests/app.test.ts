@@ -131,4 +131,45 @@ describe("POST /api/highlights", () => {
         filesBefore.sort()
     );
     });
+
+    it("cleans up the uploaded video when segments JSON is invalid", async () => {
+    const filePath = path.resolve(
+        "tests",
+        "fixtures",
+        "fake-video.mp4"
+    );
+
+    const inputDirectory = path.resolve(
+        "input"
+    );
+
+    const filesBefore =
+        await readdir(inputDirectory);
+
+    const response = await request(app)
+        .post("/api/highlights")
+        .field(
+        "segments",
+        "[{invalid-json"
+        )
+        .attach(
+        "video",
+        filePath
+        );
+
+    expect(response.status).toBe(400);
+
+    expect(response.body.status).toBe(
+        "error"
+    );
+
+    const filesAfter =
+        await readdir(inputDirectory);
+
+    expect(
+        filesAfter.sort()
+    ).toEqual(
+        filesBefore.sort()
+    );
+    });
 });
