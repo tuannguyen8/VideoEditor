@@ -45,11 +45,16 @@ app.post(
   async (req, res) => {
     let inputVideo: string | undefined;
     let workDir: string | undefined;
+    let statusCode = 201;
+    let responseBody: Record<string, unknown> = {};
 
     try {
       if (!req.file) {
         throw new Error("Video file is required.");
       }
+
+      // Store this immediately so finally can always delete it.
+      inputVideo = req.file.path;
 
       if (!req.body.segments) {
         throw new Error("Segments are required.");
@@ -60,8 +65,6 @@ app.post(
 
       const segments =
         parseSegments(rawSegments);
-
-      inputVideo = req.file.path;
 
       const jobId = randomUUID();
 
@@ -92,12 +95,12 @@ app.post(
         workDir
       );
 
-      res.status(201).json({
+      responseBody ={
         status: "success",
         jobId,
         message: "Highlight created successfully",
         videoUrl
-      });
+      };
 
     } catch (error) {
       const message =
@@ -110,10 +113,12 @@ app.post(
         message
       );
 
-      res.status(400).json({
+      statusCode = 400;
+
+      responseBody = {
         status: "error",
         message
-      });
+      };
 
     } finally {
       if (inputVideo) {
@@ -137,6 +142,7 @@ app.post(
         );
       }
     }
+    res.status(statusCode).json(responseBody);
   }
 );
 

@@ -8,6 +8,10 @@ import request from "supertest";
 
 import { app } from "../src/app";
 
+import path from "path";
+
+import { readdir } from "fs/promises";
+
 describe("GET /health", () => {
   it("returns API health status", async () => {
     const response = await request(app)
@@ -57,4 +61,74 @@ describe("POST /api/highlights", () => {
       message: "Video file is required."
     });
   });
+
+  it("rejects a file that is not a supported video type", async () => {
+    const filePath = path.resolve(
+      "tests",
+      "fixtures",
+      "not-video.txt"
+    );
+
+    const response = await request(app)
+      .post("/api/highlights")
+      .field(
+        "segments",
+        JSON.stringify([
+          {
+            start: "0:20",
+            end: "0:35"
+          }
+        ])
+      )
+      .attach(
+        "video",
+        filePath
+      );
+
+    expect(response.status).toBe(400);
+
+    expect(response.body).toEqual({
+      status: "error",
+      message:
+        "Invalid file type. Only MP4, MOV, MKV, and WEBM videos are allowed."
+    });
+  });
+
+    it("cleans up the uploaded video when segments are missing", async () => {
+    const filePath = path.resolve(
+        "tests",
+        "fixtures",
+        "fake-video.mp4"
+    );
+
+    const inputDirectory = path.resolve(
+        "input"
+    );
+
+    const filesBefore =
+        await readdir(inputDirectory);
+
+    const response = await request(app)
+        .post("/api/highlights")
+        .attach(
+        "video",
+        filePath
+        );
+
+    expect(response.status).toBe(400);
+
+    expect(response.body).toEqual({
+        status: "error",
+        message: "Segments are required."
+    });
+
+    const filesAfter =
+        await readdir(inputDirectory);
+
+    expect(
+        filesAfter.sort()
+    ).toEqual(
+        filesBefore.sort()
+    );
+    });
 });
