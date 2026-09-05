@@ -5,10 +5,12 @@
   "scripts": {
     "build:backend": "tsc",
     "build:frontend": "npm --prefix frontend run build",
-    "build": "npm run build:backend && npm run build:frontend",
+    "build": "npm run build:backend && npm run build:frontend && npm run build:electron",
     "start": "node dist/server.js",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "build:electron": "tsc -p electron/tsconfig.json",
+    "electron": "electron dist-electron/main.js"
   },
   "repository": {
     "type": "git",
@@ -27,6 +29,7 @@
     "@types/multer": "^2.2.0",
     "@types/node": "^26.2.0",
     "@types/supertest": "^7.2.1",
+    "electron": "^44.2.0",
     "supertest": "^7.2.2",
     "typescript": "^7.0.2",
     "vitest": "^4.1.11"

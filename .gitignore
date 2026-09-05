@@ -3,6 +3,7 @@ node_modules/
 
 # TypeScript build output
 dist/
+dist-electron/
 
 # Input videos
 input/
@@ -18,3 +19,4 @@ clips.txt
 
 # Environment variables
 .env
+
