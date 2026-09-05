@@ -234,4 +234,18 @@ section h2 {
   background-color: #f3f4f6;
 }
 
+.source-video-container {
+  margin-top: 20px;
+}
+
+.source-video-container h3 {
+  margin-bottom: 12px;
+}
+
+.source-video {
+  display: block;
+  width: 100%;
+  max-width: 720px;
+  border-radius: 10px;
+}
 

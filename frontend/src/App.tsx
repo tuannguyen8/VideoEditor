@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import './App.css';
 interface Segment {
 	start: string;
@@ -6,10 +6,9 @@ interface Segment {
 }
 
 function App() {
+	const [jobId, setJobId] = useState<string | null>(null);
 
-  const [jobId, setJobId] = useState<string | null>(null);
-
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+	const fileInputRef = useRef<HTMLInputElement | null>(null);
 
 	const [isProcessing, setIsProcessing] = useState(false);
 
@@ -18,6 +17,8 @@ function App() {
 	const [videoFile, setVideoFile] = useState<File | null>(null);
 
 	const [videoDuration, setVideoDuration] = useState<number | null>(null);
+
+	const [sourceVideoUrl, setSourceVideoUrl] = useState<string | null>(null);
 
 	const [segments, setSegments] = useState<Segment[]>([
 		{
@@ -28,29 +29,42 @@ function App() {
 
 	const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
+	useEffect(() => {
+		return () => {
+			if (sourceVideoUrl) {
+				URL.revokeObjectURL(sourceVideoUrl);
+			}
+		};
+	}, [sourceVideoUrl]);
+
 	function handleVideoChange(event: React.ChangeEvent<HTMLInputElement>) {
 		const file = event.target.files?.[0] ?? null;
 
 		setVideoFile(file);
 		setVideoDuration(null);
+		setErrorMessage('');
 
 		if (!file) {
+			setSourceVideoUrl(null);
 			return;
 		}
 
 		const objectUrl = URL.createObjectURL(file);
 
+		setSourceVideoUrl(objectUrl);
+
 		const video = document.createElement('video');
 
 		video.preload = 'metadata';
+		video.src = objectUrl;
 
 		video.onloadedmetadata = () => {
 			setVideoDuration(video.duration);
-
-			URL.revokeObjectURL(objectUrl);
 		};
 
-		video.src = objectUrl;
+		video.onerror = () => {
+			setErrorMessage('Could not read the selected video.');
+		};
 	}
 
 	function handleSegmentChange(
@@ -86,51 +100,42 @@ function App() {
 		setSegments(updatedSegments);
 	}
 
-async function handleNewHighlight() {
-  if (jobId) {
-    try {
-      const response = await fetch(
-        `/api/highlights/${jobId}`,
-        {
-          method: "DELETE"
-        }
-      );
+	async function handleNewHighlight() {
+		if (jobId) {
+			try {
+				const response = await fetch(`/api/highlights/${jobId}`, {
+					method: 'DELETE',
+				});
 
-      if (!response.ok) {
-        const data = await response.json();
+				if (!response.ok) {
+					const data = await response.json();
 
-        console.error(
-          "Failed to delete old highlight:",
-          data.message
-        );
-      }
-    } catch (error) {
-      console.error(
-        "Failed to delete old highlight:",
-        error
-      );
-    }
-  }
+					console.error('Failed to delete old highlight:', data.message);
+				}
+			} catch (error) {
+				console.error('Failed to delete old highlight:', error);
+			}
+		}
 
-  setVideoFile(null);
-  setVideoDuration(null);
+		setVideoFile(null);
+		setVideoDuration(null);
 
-  setSegments([
-    {
-      start: '',
-      end: '',
-    },
-  ]);
+		setSegments([
+			{
+				start: '',
+				end: '',
+			},
+		]);
 
-  setVideoUrl(null);
-  setJobId(null);
-  setErrorMessage(null);
-  setIsProcessing(false);
+		setVideoUrl(null);
+		setJobId(null);
+		setErrorMessage(null);
+		setIsProcessing(false);
 
-  if (fileInputRef.current) {
-    fileInputRef.current.value = '';
-  }
-}
+		if (fileInputRef.current) {
+			fileInputRef.current.value = '';
+		}
+	}
 
 	async function handleCreateHighlight() {
 		if (!videoFile) {
@@ -171,8 +176,7 @@ async function handleNewHighlight() {
 			}
 
 			setVideoUrl(data.videoUrl);
-      setJobId(data.jobId);
-
+			setJobId(data.jobId);
 		} catch (error) {
 			const message = error instanceof Error ? error.message : 'Unknown error';
 
@@ -191,32 +195,43 @@ async function handleNewHighlight() {
 				your highlight.
 			</p>
 
-      <section>
-        <h2>1. Upload Video</h2>
+			<section>
+				<h2>1. Upload Video</h2>
 
-        <input
-          ref={fileInputRef}
-          className="file-input"
-          type="file"
-          accept="video/*"
-          onChange={handleVideoChange}
-        />
+				<input
+					ref={fileInputRef}
+					className="file-input"
+					type="file"
+					accept="video/*"
+					onChange={handleVideoChange}
+				/>
 
-        {videoFile && (
-          <div className="video-info">
-            <p>
-              <strong>Selected video:</strong> {videoFile.name}
-            </p>
+				{videoFile && (
+					<div className="video-info">
+						<p>
+							<strong>Selected video:</strong> {videoFile.name}
+						</p>
 
-            {videoDuration !== null && (
-              <p>
-                <strong>Duration:</strong>{" "}
-                {videoDuration.toFixed(2)} seconds
-              </p>
-            )}
-          </div>
-        )}
-      </section>
+						{videoDuration !== null && (
+							<p>
+								<strong>Duration:</strong> {videoDuration.toFixed(2)} seconds
+							</p>
+						)}
+					</div>
+				)}
+
+				{sourceVideoUrl && (
+					<div className="source-video-container">
+						<h3>Original Video</h3>
+
+						<video
+							className="source-video"
+							src={sourceVideoUrl}
+							controls
+						/>
+					</div>
+				)}
+			</section>
 
 			<section>
 				<h2>2. Highlight Segments</h2>
@@ -262,57 +277,40 @@ async function handleNewHighlight() {
 				</button>
 			</section>
 
-      <section>
-        <h2>3. Create Highlight</h2>
+			<section>
+				<h2>3. Create Highlight</h2>
 
-        <button
-          className="create-button"
-          type="button"
-          onClick={handleCreateHighlight}
-          disabled={isProcessing}
-        >
-          {isProcessing
-            ? "Creating Highlight..."
-            : "Create Highlight"}
-        </button>
+				<button
+					className="create-button"
+					type="button"
+					onClick={handleCreateHighlight}
+					disabled={isProcessing}
+				>
+					{isProcessing ? 'Creating Highlight...' : 'Create Highlight'}
+				</button>
 
-        {errorMessage && (
-          <p className="error-message">
-            Error: {errorMessage}
-          </p>
-        )}
+				{errorMessage && <p className="error-message">Error: {errorMessage}</p>}
 
-        {videoUrl && (
-          <div className="highlight-result">
-            <h3>Your Highlight</h3>
+				{videoUrl && (
+					<div className="highlight-result">
+						<h3>Your Highlight</h3>
 
-            <video
-              className="highlight-video"
-              src={videoUrl}
-              controls
-            />
-    
-            <a
-              className="download-button"
-              href={videoUrl}
-              download
-            >
-              Download Highlight
-            </a>
+						<video className="highlight-video" src={videoUrl} controls />
 
-            <button
-              className="new-highlight-button"
-              type="button"
-              onClick={handleNewHighlight}
-            >
-              New Highlight
-            </button>
+						<a className="download-button" href={videoUrl} download>
+							Download Highlight
+						</a>
 
-          </div>
-        )}
-      </section>
-
-
+						<button
+							className="new-highlight-button"
+							type="button"
+							onClick={handleNewHighlight}
+						>
+							New Highlight
+						</button>
+					</div>
+				)}
+			</section>
 		</main>
 	);
 }
