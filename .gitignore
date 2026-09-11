@@ -18,3 +18,12 @@ clips.txt
 
 # Environment variables
 .env
+
+# AI generated files
+ai/cache/
+ai/runtime/
+checkpoints/
+logs/
+
+# Local test videos
+data/
