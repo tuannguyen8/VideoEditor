@@ -213,6 +213,16 @@ function App() {
 			selectedVideoPath
 		) {
 			try {
+				
+				const outputPath =
+					await window.electronAPI
+						.selectSaveLocation();
+
+				// User pressed Cancel.
+				if (!outputPath) {
+					return;
+				}
+
 				setIsProcessing(true);
 
 				setErrorMessage(null);
@@ -223,6 +233,7 @@ function App() {
 					await window.electronAPI.createHighlight(
 						selectedVideoPath,
 						segments,
+						outputPath,
 					);
 
 				setVideoUrl(

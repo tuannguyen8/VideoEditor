@@ -8,7 +8,6 @@ import path from 'path';
 import { pathToFileURL } from 'url';
 import { randomUUID } from 'crypto';
 import {
-	mkdir,
 	rm,
 } from 'fs/promises';
 
@@ -70,21 +69,42 @@ ipcMain.handle(
 );
 
 ipcMain.handle(
+	'dialog:saveHighlight',
+	async () => {
+		const result =
+			await dialog.showSaveDialog({
+				title: 'Save Highlight',
+				defaultPath: 'highlight.mp4',
+				filters: [
+					{
+						name: 'MP4 Video',
+						extensions: ['mp4'],
+					},
+				],
+			});
+
+		if (
+			result.canceled ||
+			!result.filePath
+		) {
+			return null;
+		}
+
+		return result.filePath;
+	},
+);
+
+ipcMain.handle(
 	'highlight:create',
 	async (
 		_event,
 		payload: {
 			videoPath: string;
 			segments: Segment[];
+			outputPath: string;
 		},
 	) => {
 		const jobId = randomUUID();
-
-		const outputDirectory =
-			path.join(
-				process.cwd(),
-				'output',
-			);
 
 		const workDir =
 			path.join(
@@ -93,18 +113,27 @@ ipcMain.handle(
 				jobId,
 			);
 
-		const outputPath =
-			path.join(
-				outputDirectory,
-				`highlight_${jobId}.mp4`,
-			);
+		let outputPath =
+			payload.outputPath;
 
-		await mkdir(
-			outputDirectory,
-			{
-				recursive: true,
-			},
-		);
+		if (
+			path.extname(
+				outputPath,
+			).toLowerCase() !== '.mp4'
+		) {
+			outputPath += '.mp4';
+		}
+
+		if (
+			path.resolve(outputPath) ===
+			path.resolve(
+				payload.videoPath,
+			)
+		) {
+			throw new Error(
+				'The highlight cannot overwrite the original video.',
+			);
+		}
 
 		try {
 			await createHighlight(
