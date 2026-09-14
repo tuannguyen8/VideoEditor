@@ -249,3 +249,16 @@ section h2 {
   border-radius: 10px;
 }
 
+.desktop-file-button {
+	padding: 10px 16px;
+	border: 1px solid #d1d5db;
+	border-radius: 8px;
+	background: white;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.desktop-file-button:hover {
+	background: #f3f4f6;
+}
+

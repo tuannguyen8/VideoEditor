@@ -20,6 +20,16 @@ function App() {
 
 	const [sourceVideoUrl, setSourceVideoUrl] = useState<string | null>(null);
 
+	const [
+		,
+		setSelectedVideoPath,
+	] = useState<string | null>(null);
+
+	const [
+		selectedVideoName,
+		setSelectedVideoName,
+	] = useState<string | null>(null);
+
 	const [segments, setSegments] = useState<Segment[]>([
 		{
 			start: '',
@@ -31,11 +41,45 @@ function App() {
 
 	useEffect(() => {
 		return () => {
-			if (sourceVideoUrl) {
-				URL.revokeObjectURL(sourceVideoUrl);
+			if (
+				sourceVideoUrl?.startsWith(
+					'blob:',
+				)
+			) {
+				URL.revokeObjectURL(
+					sourceVideoUrl,
+				);
 			}
 		};
 	}, [sourceVideoUrl]);
+
+	async function handleDesktopVideoSelect() {
+		if (!window.electronAPI) {
+			return;
+		}
+
+		const selectedVideo =
+			await window.electronAPI.selectVideo();
+
+		if (!selectedVideo) {
+			return;
+		}
+
+		setSelectedVideoPath(
+			selectedVideo.filePath,
+		);
+
+		setSelectedVideoName(
+			selectedVideo.fileName,
+		);
+
+		setSourceVideoUrl(
+			selectedVideo.fileUrl,
+		);
+
+		setVideoDuration(null);
+		setErrorMessage(null);
+	}
 
 	function handleVideoChange(event: React.ChangeEvent<HTMLInputElement>) {
 		const file = event.target.files?.[0] ?? null;
@@ -198,23 +242,46 @@ function App() {
 			<section>
 				<h2>1. Upload Video</h2>
 
-				<input
-					ref={fileInputRef}
-					className="file-input"
-					type="file"
-					accept="video/*"
-					onChange={handleVideoChange}
-				/>
+				{window.electronAPI ? (
+					<button
+						type="button"
+						className="desktop-file-button"
+						onClick={
+							handleDesktopVideoSelect
+						}
+					>
+						Choose File
+					</button>
+				) : (
+					<input
+						ref={fileInputRef}
+						className="file-input"
+						type="file"
+						accept="video/*"
+						onChange={
+							handleVideoChange
+						}
+					/>
+				)}
 
-				{videoFile && (
+				{(selectedVideoName ||
+					videoFile) && (
 					<div className="video-info">
 						<p>
-							<strong>Selected video:</strong> {videoFile.name}
+							<strong>
+								Selected video:
+							</strong>{' '}
+							{selectedVideoName ??
+								videoFile?.name}
 						</p>
 
 						{videoDuration !== null && (
 							<p>
-								<strong>Duration:</strong> {videoDuration.toFixed(2)} seconds
+								<strong>
+									Duration:
+								</strong>{' '}
+								{videoDuration.toFixed(2)}
+								{' seconds'}
 							</p>
 						)}
 					</div>
@@ -223,11 +290,15 @@ function App() {
 				{sourceVideoUrl && (
 					<div className="source-video-container">
 						<h3>Original Video</h3>
-
 						<video
 							className="source-video"
 							src={sourceVideoUrl}
 							controls
+							onLoadedMetadata={(event) => {
+								setVideoDuration(
+									event.currentTarget.duration,
+								);
+							}}
 						/>
 					</div>
 				)}
