@@ -8,6 +8,17 @@ declare global {
 				fileName: string;
 				fileUrl: string;
 			} | null>;
+
+			createHighlight: (
+				videoPath: string,
+				segments: {
+					start: string;
+					end: string;
+				}[],
+			) => Promise<{
+				videoPath: string;
+				videoUrl: string;
+			}>;
 		};
 	}
 }

@@ -21,7 +21,7 @@ function App() {
 	const [sourceVideoUrl, setSourceVideoUrl] = useState<string | null>(null);
 
 	const [
-		,
+		selectedVideoPath,
 		setSelectedVideoPath,
 	] = useState<string | null>(null);
 
@@ -182,24 +182,91 @@ function App() {
 	}
 
 	async function handleCreateHighlight() {
-		if (!videoFile) {
-			setErrorMessage('Please select a video first.');
+		if (
+			!videoFile &&
+			!selectedVideoPath
+		) {
+			setErrorMessage(
+				'Please select a video.',
+			);
+
 			return;
 		}
 
-		// const validationError = validateSegments(segments);
-		const validationError = validateSegments(segments, videoDuration);
+		const validationError =
+			validateSegments(
+				segments,
+				videoDuration,
+			);
 
 		if (validationError) {
-			setErrorMessage(validationError);
+			setErrorMessage(
+				validationError,
+			);
+
 			return;
 		}
 
-		const formData = new FormData();
+		// Desktop Electron flow
+		if (
+			window.electronAPI &&
+			selectedVideoPath
+		) {
+			try {
+				setIsProcessing(true);
 
-		formData.append('video', videoFile);
+				setErrorMessage(null);
 
-		formData.append('segments', JSON.stringify(segments));
+				setVideoUrl(null);
+
+				const result =
+					await window.electronAPI.createHighlight(
+						selectedVideoPath,
+						segments,
+					);
+
+				setVideoUrl(
+					result.videoUrl,
+				);
+
+				setJobId(null);
+			} catch (error) {
+				const message =
+					error instanceof Error
+						? error.message
+						: 'Failed to create highlight.';
+
+				setErrorMessage(
+					message,
+				);
+			} finally {
+				setIsProcessing(false);
+			}
+
+			return;
+		}
+
+		// Web flow
+		if (!videoFile) {
+			setErrorMessage(
+				'Please select a video.',
+			);
+
+			return;
+		}
+
+		const formData =
+			new FormData();
+
+		formData.append(
+			'video',
+			videoFile,
+		);
+
+		formData.append(
+			'segments',
+			JSON.stringify(segments),
+		);
 
 		try {
 			setIsProcessing(true);
@@ -208,23 +275,41 @@ function App() {
 
 			setVideoUrl(null);
 
-			const response = await fetch('/api/highlights', {
-				method: 'POST',
-				body: formData,
-			});
+			const response =
+				await fetch(
+					'/api/highlights',
+					{
+						method: 'POST',
+						body: formData,
+					},
+				);
 
-			const data = await response.json();
+			const data =
+				await response.json();
 
 			if (!response.ok) {
-				throw new Error(data.message || 'Failed to create highlight.');
+				throw new Error(
+					data.message ||
+						'Failed to create highlight.',
+				);
 			}
 
-			setVideoUrl(data.videoUrl);
-			setJobId(data.jobId);
-		} catch (error) {
-			const message = error instanceof Error ? error.message : 'Unknown error';
+			setVideoUrl(
+				data.videoUrl,
+			);
 
-			setErrorMessage(message);
+			setJobId(
+				data.jobId,
+			);
+		} catch (error) {
+			const message =
+				error instanceof Error
+					? error.message
+					: 'Unknown error';
+
+			setErrorMessage(
+				message,
+			);
 		} finally {
 			setIsProcessing(false);
 		}
