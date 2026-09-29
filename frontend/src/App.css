@@ -262,3 +262,9 @@ section h2 {
 	background: #f3f4f6;
 }
 
+.success-message {
+	margin-top: 16px;
+	color: #166534;
+	font-weight: 600;
+}
+

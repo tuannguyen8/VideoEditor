@@ -14,6 +14,9 @@ function App() {
 
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+	const [successMessage, setSuccessMessage] =
+	useState<string | null>(null);
+
 	const [videoFile, setVideoFile] = useState<File | null>(null);
 
 	const [videoDuration, setVideoDuration] = useState<number | null>(null);
@@ -54,6 +57,8 @@ function App() {
 	}, [sourceVideoUrl]);
 
 	async function handleDesktopVideoSelect() {
+		setSuccessMessage(null);
+		setErrorMessage(null);
 		if (!window.electronAPI) {
 			return;
 		}
@@ -73,15 +78,21 @@ function App() {
 			selectedVideo.fileName,
 		);
 
+		// Chỉ reset duration nếu user thực sự chọn video khác.
+		if (selectedVideo.fileUrl !== sourceVideoUrl) {
+			setVideoDuration(null);
+		}
+
 		setSourceVideoUrl(
 			selectedVideo.fileUrl,
 		);
 
-		setVideoDuration(null);
 		setErrorMessage(null);
 	}
 
 	function handleVideoChange(event: React.ChangeEvent<HTMLInputElement>) {
+		setSuccessMessage(null);
+		setErrorMessage(null);
 		const file = event.target.files?.[0] ?? null;
 
 		setVideoFile(file);
@@ -164,6 +175,10 @@ function App() {
 		setVideoFile(null);
 		setVideoDuration(null);
 
+		setSelectedVideoPath(null);
+		setSelectedVideoName(null);
+		setSourceVideoUrl(null);
+
 		setSegments([
 			{
 				start: '',
@@ -174,6 +189,7 @@ function App() {
 		setVideoUrl(null);
 		setJobId(null);
 		setErrorMessage(null);
+		setSuccessMessage(null);
 		setIsProcessing(false);
 
 		if (fileInputRef.current) {
@@ -207,6 +223,9 @@ function App() {
 			return;
 		}
 
+		setErrorMessage(null);
+		setSuccessMessage(null);
+
 		// Desktop Electron flow
 		if (
 			window.electronAPI &&
@@ -238,6 +257,10 @@ function App() {
 
 				setVideoUrl(
 					result.videoUrl,
+				);
+
+				setSuccessMessage(
+					'Highlight created successfully.',
 				);
 
 				setJobId(null);
@@ -312,12 +335,17 @@ function App() {
 			setJobId(
 				data.jobId,
 			);
+
+			setSuccessMessage(
+				'Highlight created successfully.',
+			);
 		} catch (error) {
 			const message =
 				error instanceof Error
 					? error.message
 					: 'Unknown error';
 
+			setSuccessMessage(null);
 			setErrorMessage(
 				message,
 			);
@@ -457,6 +485,12 @@ function App() {
 				</button>
 
 				{errorMessage && <p className="error-message">Error: {errorMessage}</p>}
+
+				{successMessage && (
+					<p className="success-message">
+						{successMessage}
+					</p>
+				)}
 
 				{videoUrl && (
 					<div className="highlight-result">
