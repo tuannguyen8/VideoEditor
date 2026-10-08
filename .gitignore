@@ -22,6 +22,7 @@ clips.txt
 # AI generated files
 ai/cache/
 ai/runtime/
+ai/output/
 checkpoints/
 logs/
 
