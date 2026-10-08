@@ -18,3 +18,17 @@ clips.txt
 
 # Environment variables
 .env
+
+# AI generated files
+ai/cache/
+ai/runtime/
+ai/output/
+checkpoints/
+logs/
+
+# Local test videos
+data/
+
+# Python
+__pycache__/
+*.py[cod]
